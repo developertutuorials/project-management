@@ -47,62 +47,62 @@ flowchart TD
     TS -.->|Publish 'app/task.assigned'| Bus
 ```
 
-    ## 🚀 Getting Started
+## 🚀 Getting Started
 
-    ### Prerequisites
+### Prerequisites
 
-    - Node.js and npm
-    - A PostgreSQL-compatible database (the project uses Neon)
-    - Clerk keys for authenticated frontend/API use
-    - Docker Desktop, if running with Docker Compose
+- Node.js and npm
+- A PostgreSQL-compatible database (the project uses Neon)
+- Clerk keys for authenticated frontend/API use
+- Docker Desktop, if running with Docker Compose
 
-    ### Configure environment
+### Configure environment
 
-    Create a root `.env` file:
+Create a root `.env` file:
 
-    ```env
-    DATABASE_URL="your-pooled-database-connection-string"
-    DIRECT_URL="your-direct-database-connection-string"
-    CLERK_PUBLISHABLE_KEY="your-clerk-publishable-key"
-    CLERK_SECRET_KEY="your-clerk-secret-key"
+```env
+DATABASE_URL="your-pooled-database-connection-string"
+DIRECT_URL="your-direct-database-connection-string"
+CLERK_PUBLISHABLE_KEY="your-clerk-publishable-key"
+CLERK_SECRET_KEY="your-clerk-secret-key"
 
-    # Optional: required for outbound notification emails
-    SMTP_HOST="smtp-relay.brevo.com"
-    SMTP_PORT="587"
-    SMTP_USER="your-smtp-user"
-    SMTP_PASS="your-smtp-password"
-    SENDER_EMAIL="your-sender-email"
-    ```
+# Optional: required for outbound notification emails
+SMTP_HOST="smtp-relay.brevo.com"
+SMTP_PORT="587"
+SMTP_USER="your-smtp-user"
+SMTP_PASS="your-smtp-password"
+SENDER_EMAIL="your-sender-email"
+```
 
-    Create the frontend environment file from the example and add your Clerk publishable key:
+Create the frontend environment file from the example and add your Clerk publishable key:
 
-    ```sh
-    cp client/.env.example client/.env
-    ```
+```sh
+cp client/.env.example client/.env
+```
 
-    Set `VITE_CLERK_PUBLISHABLE_KEY` in `client/.env`. The example `VITE_BASEURL` points to the local API Gateway.
+Set `VITE_CLERK_PUBLISHABLE_KEY` in `client/.env`. The example `VITE_BASEURL` points to the local API Gateway.
 
-    ### Install and run locally
+### Install and run locally
 
-    From the project root:
+From the project root:
 
-    ```sh
-    npm install
-    npm run db:generate
-    npm run db:push
-    npm run dev:all
-    ```
+```sh
+npm install
+npm run db:generate
+npm run db:push
+npm run dev:all
+```
 
-    `npm run dev:all` starts the API Gateway, all five backend services, and the Vite frontend. Open the frontend URL printed by Vite (normally `http://localhost:5173`). To run only the backend services, use `npm run dev`; to run only the frontend, use `npm run dev:client`.
+`npm run dev:all` starts the API Gateway, all five backend services, and the Vite frontend. Open the frontend URL printed by Vite (normally `http://localhost:5173`). To run only the backend services, use `npm run dev`; to run only the frontend, use `npm run dev:client`.
 
-    The API Gateway health endpoint is available at `http://localhost:4000/`. Backend services use ports `5001` through `5005`.
+The API Gateway health endpoint is available at `http://localhost:4000/`. Backend services use ports `5001` through `5005`.
 
-    ### Run with Docker Compose
+### Run with Docker Compose
 
-    After creating the root `.env` and `client/.env` files, run:
+After creating the root `.env` and `client/.env` files, run:
 
-    ```sh
-    npm run docker:up
-    ```
+```sh
+npm run docker:up
+```
 
-    The app is served at `http://localhost:3000`. To stop the containers, run `npm run docker:down`.
+The app is served at `http://localhost:3000`. To stop the containers, run `npm run docker:down`.
