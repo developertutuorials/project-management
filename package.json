@@ -1,0 +1,29 @@
+{
+  "name": "taskflow-monorepo",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"gateway,workspace,project,task,notif,user\" -c \"blue,green,yellow,magenta,cyan,red\" \"npm run dev:gateway\" \"npm run dev:workspace\" \"npm run dev:project\" \"npm run dev:task\" \"npm run dev:notification\" \"npm run dev:user\"",
+    "dev:gateway": "node services/api-gateway/server.js",
+    "dev:workspace": "node services/workspace-service/server.js",
+    "dev:project": "node services/project-service/server.js",
+    "dev:task": "node services/task-service/server.js",
+    "dev:notification": "node services/notification-service/server.js",
+    "dev:user": "node services/user-service/server.js",
+    "dev:client": "npm --prefix client run dev",
+    "dev:all": "concurrently -n \"gateway,ws,proj,task,notif,user,client\" -c \"blue,green,yellow,magenta,cyan,red,white\" \"npm run dev:gateway\" \"npm run dev:workspace\" \"npm run dev:project\" \"npm run dev:task\" \"npm run dev:notification\" \"npm run dev:user\" \"npm run dev:client\"",
+    "db:generate": "npm --prefix packages/database run db:generate",
+    "db:push": "npm --prefix packages/database run db:push",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

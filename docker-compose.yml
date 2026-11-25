@@ -1,0 +1,130 @@
+version: "3.8"
+
+services:
+  # Redis - Distributed Caching & Event Broker
+  redis:
+    image: redis:7-alpine
+    container_name: taskflow-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # API Gateway - Port 4000
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: taskflow-gateway
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      - WORKSPACE_SERVICE_URL=http://workspace-service:5001
+      - PROJECT_SERVICE_URL=http://project-service:5002
+      - TASK_SERVICE_URL=http://task-service:5003
+      - NOTIFICATION_SERVICE_URL=http://notification-service:5004
+      - USER_SERVICE_URL=http://user-service:5005
+    depends_on:
+      - workspace-service
+      - project-service
+      - task-service
+      - notification-service
+      - user-service
+    restart: unless-stopped
+
+  # Workspace Service - Port 5001
+  workspace-service:
+    build:
+      context: .
+      dockerfile: ./services/workspace-service/Dockerfile
+    container_name: taskflow-workspace-service
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+    restart: unless-stopped
+
+  # Project Service - Port 5002
+  project-service:
+    build:
+      context: .
+      dockerfile: ./services/project-service/Dockerfile
+    container_name: taskflow-project-service
+    ports:
+      - "5002:5002"
+    environment:
+      - PORT=5002
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+    restart: unless-stopped
+
+  # Task & Comment Service - Port 5003
+  task-service:
+    build:
+      context: .
+      dockerfile: ./services/task-service/Dockerfile
+    container_name: taskflow-task-service
+    ports:
+      - "5003:5003"
+    environment:
+      - PORT=5003
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - NOTIFICATION_SERVICE_URL=http://notification-service:5004
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # Notification & Background Worker Service - Port 5004
+  notification-service:
+    build:
+      context: .
+      dockerfile: ./services/notification-service/Dockerfile
+    container_name: taskflow-notification-service
+    ports:
+      - "5004:5004"
+    environment:
+      - PORT=5004
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - SMTP_HOST=${SMTP_HOST:-smtp-relay.brevo.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SENDER_EMAIL=${SENDER_EMAIL}
+    restart: unless-stopped
+
+  # User Service - Port 5005
+  user-service:
+    build:
+      context: .
+      dockerfile: ./services/user-service/Dockerfile
+    container_name: taskflow-user-service
+    ports:
+      - "5005:5005"
+    environment:
+      - PORT=5005
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+    restart: unless-stopped
+
+  # Frontend Client - Port 3000 (proxied via Nginx)
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: taskflow-client
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+
+networks:
+  default:
+    name: taskflow-network

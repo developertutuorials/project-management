@@ -1,0 +1,287 @@
+import { format } from "date-fns";
+import { Plus, Save, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import AddProjectMember from "./AddProjectMember";
+import { useDispatch, useSelector } from "react-redux";
+import { useAuth } from "@clerk/react";
+import toast from "react-hot-toast";
+import { fetchWorkspaces } from "../features/workspaceSlice";
+import api from "../configs/api";
+import { useNavigate } from "react-router-dom";
+
+export default function ProjectSettings({ project }) {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { getToken } = useAuth();
+  const { currentWorkspace } = useSelector((state) => state.workspace);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    status: "PLANNING",
+    priority: "MEDIUM",
+    start_date: "",
+    end_date: "",
+    progress: 0,
+  });
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    const toastId = toast.loading("Saving...");
+    try {
+      const { data } = await api.put(
+        `/api/projects/${project.id}`,
+        { ...formData, workspaceId: currentWorkspace.id },
+        { headers: { Authorization: `Bearer ${await getToken()}` } },
+      );
+      dispatch(fetchWorkspaces({ getToken }));
+      toast.success(data.message, { id: toastId });
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error.message, {
+        id: toastId,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    const confirm = window.confirm(
+      "Are you sure you want to delete this project? This action cannot be undone.",
+    );
+    if (!confirm) return;
+
+    setIsDeleting(true);
+    const toastId = toast.loading("Deleting project...");
+    try {
+      await api.delete(`/api/projects/${project.id}`, {
+        headers: { Authorization: `Bearer ${await getToken()}` },
+      });
+      dispatch(fetchWorkspaces({ getToken }));
+      toast.success("Project deleted successfully", { id: toastId });
+      navigate("/projects");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error.message, {
+        id: toastId,
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (project) setFormData(project);
+  }, [project]);
+
+  const inputClasses =
+    "w-full px-3 py-2 rounded mt-2 border text-sm dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-300";
+
+  const cardClasses =
+    "rounded-lg border p-6 not-dark:bg-white dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border-zinc-300 dark:border-zinc-800";
+
+  const labelClasses = "text-sm text-zinc-600 dark:text-zinc-400";
+
+  return (
+    <div className="space-y-8">
+      <div className="grid lg:grid-cols-2 gap-8">
+        {/* Project Details */}
+        <div className={cardClasses}>
+          <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-300 mb-4">
+            Project Details
+          </h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label className={labelClasses}>Project Name</label>
+              <input
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                className={inputClasses}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className={labelClasses}>Description</label>
+              <textarea
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                className={inputClasses + " h-24"}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className={labelClasses}>Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) =>
+                    setFormData({ ...formData, status: e.target.value })
+                  }
+                  className={inputClasses}
+                >
+                  <option value="PLANNING">Planning</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="ON_HOLD">On Hold</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className={labelClasses}>Priority</label>
+                <select
+                  value={formData.priority}
+                  onChange={(e) =>
+                    setFormData({ ...formData, priority: e.target.value })
+                  }
+                  className={inputClasses}
+                >
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className={labelClasses}>Start Date</label>
+                <input
+                  type="date"
+                  value={
+                    formData.start_date
+                      ? format(new Date(formData.start_date), "yyyy-MM-dd")
+                      : ""
+                  }
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      start_date: new Date(e.target.value),
+                    })
+                  }
+                  className={inputClasses}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className={labelClasses}>End Date</label>
+                <input
+                  type="date"
+                  value={
+                    formData.end_date
+                      ? format(new Date(formData.end_date), "yyyy-MM-dd")
+                      : ""
+                  }
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      end_date: new Date(e.target.value),
+                    })
+                  }
+                  className={inputClasses}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className={labelClasses}>
+                Progress: {formData.progress}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value={formData.progress}
+                onChange={(e) =>
+                  setFormData({ ...formData, progress: Number(e.target.value) })
+                }
+                className="w-full accent-blue-500 dark:accent-blue-400"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="ml-auto flex items-center text-sm justify-center gap-2 bg-gradient-to-br from-blue-500 to-blue-600 text-white px-4 py-2 rounded"
+            >
+              <Save className="size-4" />
+              {isSubmitting ? "Saving..." : "Save Changes"}
+            </button>
+          </form>
+        </div>
+
+        {/* Team Members */}
+        <div className="space-y-6">
+          <div className={cardClasses}>
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-300 mb-4">
+                Team Members{" "}
+                <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                  ({project.members.length})
+                </span>
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsDialogOpen(true)}
+                className="p-2 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              >
+                <Plus className="size-4 text-zinc-900 dark:text-zinc-300" />
+              </button>
+              <AddProjectMember
+                isDialogOpen={isDialogOpen}
+                setIsDialogOpen={setIsDialogOpen}
+              />
+            </div>
+
+            {project.members.length > 0 && (
+              <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
+                {project.members.map((member, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between px-3 py-2 rounded dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-300"
+                  >
+                    <span>{member?.user?.email || "Unknown"}</span>
+                    {project.team_lead === member.user.id && (
+                      <span className="px-2 py-0.5 rounded-xs ring ring-zinc-200 dark:ring-zinc-600">
+                        Team Lead
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="rounded-lg border border-red-300 dark:border-red-900 p-6">
+        <h2 className="text-lg font-medium text-red-600 dark:text-red-400 mb-2">
+          Danger Zone
+        </h2>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
+          Deleting this project will permanently remove all tasks, comments and
+          data associated with it. This action cannot be undone.
+        </p>
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={isDeleting}
+          className="flex items-center gap-2 px-4 py-2 rounded bg-red-500 hover:bg-red-600 text-white text-sm transition"
+        >
+          <Trash2 className="size-4" />
+          {isDeleting ? "Deleting..." : "Delete Project"}
+        </button>
+      </div>
+    </div>
+  );
+}
